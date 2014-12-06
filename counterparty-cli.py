@@ -204,11 +204,14 @@ def market (give_asset, get_asset):
 def cli(method, params, unsigned):
     # Get unsigned transaction serialisation.
 
-    is_multisig = util.is_multisig(params['source'])
     params['source'] = util.canonical_address(params['source'])
     pubkey = None
 
-    if not is_multisig:
+    if util.is_multisig(params['source']):
+        answer = input('Public keys (hexadecimal, comma‐separated): ')
+        answer = anwser.replace(' ', '')
+        params['pubkey'] = answer.split(',')
+    else:
         # Get public key for source.
         source = params['source']
         if not backend.is_valid(source):
@@ -239,7 +242,7 @@ def cli(method, params, unsigned):
                                         regular_dust_size=params['regular_dust_size'],
                                         multisig_dust_size=params['multisig_dust_size'],
                                         op_return_value=params['op_return_value'],
-                                        self_public_key_hex=pubkey,
+                                        provided_pubkeys=pubkey,
                                         allow_unconfirmed_inputs=params['allow_unconfirmed_inputs']))
     exit(0)
     """
@@ -249,7 +252,7 @@ def cli(method, params, unsigned):
     print('Transaction (unsigned):', unsigned_tx_hex)
 
     # Ask to sign and broadcast (if not multi‐sig).
-    if is_multisig:
+    if util.is_multisig(params['source']):
         print('Multi‐signature transactions are signed and broadcasted manually.')
     elif not unsigned and input('Sign and broadcast? (y/N) ') == 'y':
         if backend.is_mine(source):
